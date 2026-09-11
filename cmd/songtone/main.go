@@ -1,8 +1,9 @@
-// Command creep builds Radiohead "Creep" tone presets as single-preset
+// Command songtone builds song-specific guitar tones as single-preset
 // Matribox patch files (the only patch format the desktop app accepts).
 //
-//	-tone crunch  pre-chorus rhythm crunch (default)
-//	-tone clean   verse clean
+//	-song creep-chunk  Radiohead "Creep" pre-chorus rhythm crunch
+//	-song creep-clean  Radiohead "Creep" verse clean
+//	-song idly-chunk   My Chemical Romance "I Don't Love You" rhythm crunch
 //
 // Every effect block is spliced from a factory preset that already uses the
 // same effectCode, so all params are factory-attested values.
@@ -19,32 +20,33 @@ import (
 )
 
 func die(f string, a ...any) {
-	fmt.Fprintf(os.Stderr, "creep: "+f+"\n", a...)
+	fmt.Fprintf(os.Stderr, "songtone: "+f+"\n", a...)
 	os.Exit(1)
 }
 
 // toneSpec describes one researched tone.
 type toneSpec struct {
-	name   string
+	name   string // 12 chars max, space-padded like factory presets
 	file   string
+	bpm    int
 	blocks map[string]string // module -> factory effect name to enable
 }
 
 var tones = map[string]toneSpec{
-	"crunch": {
-		name: "Creep Chunk",
-		file: "creep.prst",
+	// Radiohead "Creep" — Telecaster Plus -> Marshall Shredmaster -> clean
+	// Fender combo. Research notes in the workspace research directory.
+	"creep-chunk": {
+		name: "Creep Chunk", file: "creep.prst", bpm: 92,
 		blocks: map[string]string{
 			"AMP": "B-Man N",     // Fender Bassman normal: pedal-friendly clean platform
-			"FX2": "JP Dist",     // op-amp high-gain dist (Marshall Shredmaster stand-in)
+			"FX2": "JP Dist",     // op-amp high-gain dist (Shredmaster stand-in)
 			"CAB": "Viblux 1x12", // small Fender-style combo cab, tight lows
 			"NR":  "Gate 2",      // single-coil hiss control under gain
 			"RVB": "Spring",      // Fender spring reverb
 		},
 	},
-	"clean": {
-		name: "Creep Clean",
-		file: "creep-clean.prst",
+	"creep-clean": {
+		name: "Creep Clean", file: "creep-clean.prst", bpm: 92,
 		blocks: map[string]string{
 			"FX1": "COMP",        // light compression under the arpeggio
 			"AMP": "B-Man N",     // sparkling clean Fender platform
@@ -53,17 +55,31 @@ var tones = map[string]toneSpec{
 			"RVB": "Plate",       // light plate spread
 		},
 	},
+	// My Chemical Romance "I Don't Love You" — Les Paul/Tele -> TS9 boost ->
+	// borrowed Marshall JCM800 head (Rob Cavallo's) -> Marshall 4x12. The
+	// verse is "clean with a little crunch, not overdrive"; the chorus is
+	// the full Marshall crunch this patch targets.
+	"idly-chunk": {
+		name: "IDLY Chunk", file: "idly-chunk.prst", bpm: 88,
+		blocks: map[string]string{
+			"AMP": "Brit 800",    // Marshall JCM800 head
+			"FX2": "Skreamer",    // TS9 Tube Screamer-style boost into the amp
+			"CAB": "Brit75 4x12", // Marshall-style 4x12
+			"NR":  "Gate 2",      // high-gain hiss control
+			"RVB": "Room",        // light room; the track is fairly dry
+		},
+	},
 }
 
 func main() {
 	in := flag.String("in", "prsts.prst", "factory bundle")
-	out := flag.String("out", "", "output patch file (default: per-tone name)")
-	tone := flag.String("tone", "crunch", "tone to build: crunch|clean")
+	out := flag.String("out", "", "output patch file (default: per-song name)")
+	song := flag.String("song", "creep-chunk", "tone to build: creep-chunk|creep-clean|idly-chunk")
 	flag.Parse()
 
-	spec, ok := tones[*tone]
+	spec, ok := tones[*song]
 	if !ok {
-		die("unknown tone %q (crunch|clean)", *tone)
+		die("unknown song %q (creep-chunk|creep-clean|idly-chunk)", *song)
 	}
 	b, err := prst.Load(*in)
 	if err != nil {
@@ -95,14 +111,14 @@ func main() {
 		return prst.Effect{}
 	}
 
-	creeper := tmpl.CloneAs(0, spec.name, "")
-	creeper.Bank = 0
-	creeper.Volume = 65
-	creeper.BPM = 92 // Creep tempo
+	patch := tmpl.CloneAs(0, spec.name, "")
+	patch.Bank = 0
+	patch.Volume = 65
+	patch.BPM = spec.bpm
 
 	var cabCode uint32
-	for i := range creeper.Effects {
-		e := &creeper.Effects[i]
+	for i := range patch.Effects {
+		e := &patch.Effects[i]
 		if name, on := spec.blocks[e.Module]; on {
 			*e = findBlock(e.Module, name)
 			if e.Module == "CAB" {
@@ -116,10 +132,10 @@ func main() {
 	// active CAB model (its low byte): it wrote 40 = 0x28 = "Sol 4x12" when
 	// re-exporting a preset whose bundle value was 0. Mirror that here, or
 	// the patch loads with the wrong cabinet IR.
-	creeper.IRNum = fmt.Sprint(cabCode & 0xFF)
+	patch.IRNum = fmt.Sprint(cabCode & 0xFF)
 
-	b.Presets = []prst.Preset{*creeper} // patch files are single-preset only
-	b.IRInfo.IRs = nil                  // ... and carry no ppIRInfo section
+	b.Presets = []prst.Preset{*patch} // patch files are single-preset only
+	b.IRInfo.IRs = nil                // ... and carry no ppIRInfo section
 	b.Info.Count = 1
 	b.Info.Time = fmt.Sprint(time.Now().UnixMilli()) // like the app's exporter
 
@@ -130,8 +146,8 @@ func main() {
 	if err := b.Save(path); err != nil {
 		die("save: %v", err)
 	}
-	fmt.Printf("wrote %s — %q (ppID=%d, bank=%d, ppIRNum=%s)\n", path, creeper.Name, creeper.ID, creeper.Bank, creeper.IRNum)
-	for _, e := range creeper.Effects {
+	fmt.Printf("wrote %s — %q (ppID=%d, bank=%d, ppIRNum=%s)\n", path, patch.Name, patch.ID, patch.Bank, patch.IRNum)
+	for _, e := range patch.Effects {
 		state := "off"
 		if e.State == 1 {
 			state = "ON "
