@@ -1,6 +1,11 @@
-// Command creep composes the "Creep Chunk" preset: a research-grounded
-// rebuild of Radiohead's "Creep" rhythm-crunch tone on the Matribox QME-50.
-// One-off tool; run from the module root.
+// Command creep builds the "Creep Chunk" preset (Radiohead "Creep" rhythm
+// crunch, research-grounded) into a Matribox .prst bundle.
+//
+// Modes:
+//
+//	-single    output a bundle containing only the Creep preset (default)
+//	-replace   overwrite factory preset -slot inside a full bundle
+//	-identity  load and re-save the bundle with no edits (writer validation)
 package main
 
 import (
@@ -20,12 +25,25 @@ func die(f string, a ...any) {
 func main() {
 	in := flag.String("in", "prsts.prst", "factory bundle")
 	out := flag.String("out", "creep-rhythm.prst", "output bundle")
+	mode := flag.String("mode", "single", "single|replace|identity")
+	slot := flag.Int("slot", 98, "ppID to overwrite in replace mode")
 	flag.Parse()
 
 	b, err := prst.Load(*in)
 	if err != nil {
 		die("%v", err)
 	}
+	if *mode == "single" {
+		*slot = 0
+	}
+	if *mode == "identity" {
+		if err := b.Save(*out); err != nil {
+			die("save: %v", err)
+		}
+		fmt.Printf("wrote %s (identity re-save, %d presets)\n", *out, len(b.Presets))
+		return
+	}
+
 	tmpl, err := b.PresetByID(0)
 	if err != nil {
 		die("%v", err)
@@ -42,8 +60,11 @@ func main() {
 		return prst.Effect{}
 	}
 
-	creeper := tmpl.CloneAs(b.NextID(), "Creep Chunk", "")
-	creeper.Bank = 1
+	creeper := tmpl.CloneAs(*slot, "Creep Chunk", "")
+	creeper.Bank = 0
+	if *mode == "replace" {
+		creeper.Bank = b.Presets[*slot].Bank
+	}
 	creeper.Volume = 65
 	creeper.BPM = 92
 	on := map[string]prst.Effect{
@@ -61,12 +82,16 @@ func main() {
 			e.State = 0
 		}
 	}
-	b.Presets = append(b.Presets, *creeper)
+	if *mode == "replace" {
+		b.Presets[*slot] = *creeper
+	} else { // single
+		b.Presets = []prst.Preset{*creeper}
+	}
 	b.Info.Count = len(b.Presets)
 	if err := b.Save(*out); err != nil {
 		die("save: %v", err)
 	}
-	fmt.Printf("wrote %s — preset %q ppID=%d\n", *out, creeper.Name, creeper.ID)
+	fmt.Printf("wrote %s — %s mode: slot %d = %q (%d presets)\n", *out, *mode, *slot, creeper.Name, len(b.Presets))
 	for _, e := range creeper.Effects {
 		state := "off"
 		if e.State == 1 {
