@@ -1,0 +1,12 @@
+# generated IR output
+irs/
+irs2/
+
+# local preset bundles (vendor factory data stays out of the repo)
+*.prst
+!prst/testdata/**
+
+# built binaries (root-anchored so cmd/qme50ir/ stays tracked)
+/qme50ir
+/matribox-toolkit
+/dist/
