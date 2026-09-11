@@ -114,10 +114,18 @@ Invariants you must not break:
   `Load → Save → Load` with identical preset count, effect count per preset,
   `effectCode`, all 15 `params_N` values, EXP presence and child count, and
   IR slot count. `FuzzRoundTrip` enforces this.
+- **Serialization style is load-bearing**: `Save` hand-writes CRLF endings,
+  self-closing empty elements (`<Effect .../>`, never `</Effect>`), the
+  factory child order (Effects, then `ppCtrl`, then `ppEXP1`), and greedy
+  attribute wrapping at 93 columns. The Matribox desktop app **crashes** on
+  equivalent XML in `encoding/xml` style (LF endings, `<Effect ...></Effect>`
+  pairs — observed 2026-09-12), so do not replace this writer with marshaling.
+  Regression bar: `Load → Save` of the untouched factory bundle must differ
+  from the original at element level only in edited fields (attribute line
+  wrapping may differ).
 - **Dynamic names**: children are emitted as `ppIRInfoN` and `ppEXP1_N`
   (slot indices from parse), never as Go type names (`UserIR`, `EXPChild`).
-  `prst_test.go` asserts this; do not "simplify" the custom marshalers into
-  struct tags.
+  `prst_test.go` asserts this.
 - **Effect ordering**: each preset holds exactly 9 `<Effect>` children in
   fixed chain order RVB, DLY, MOD, EQ, CAB, NR, AMP, FX2, FX1, with chain
   position `x="0..8"` and 15 `params_N` attributes each. New presets must

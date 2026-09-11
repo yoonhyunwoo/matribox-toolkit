@@ -38,15 +38,6 @@ type UserIR struct {
 	CRC   string `xml:"ppIRCRC,attr"`
 }
 
-func (u UserIR) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
-	name := "ppIRInfo" + strconv.Itoa(u.Slot)
-	return e.EncodeElement(struct {
-		IRNum string `xml:"ppIRNum,attr"`
-		Name  string `xml:"ppIRName,attr"`
-		CRC   string `xml:"ppIRCRC,attr"`
-	}{u.IRNum, u.Name, u.CRC}, xml.StartElement{Name: xml.Name{Local: name}})
-}
-
 // UnmarshalXML is not used directly; IRInfoSet.UnmarshalXML captures slots.
 func (s *IRInfoSet) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	for {
@@ -87,26 +78,6 @@ type Effect struct {
 	X      int        `xml:"x,attr"`
 	Y      int        `xml:"y,attr"`
 	P      [15]string `xml:"-"`
-}
-
-// MarshalXML emits module/name/state/code/x/y then params_0..params_14.
-func (f Effect) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
-	start := xml.StartElement{Name: xml.Name{Local: "Effect"}}
-	start.Attr = []xml.Attr{
-		{Name: xml.Name{Local: "effectModuleName"}, Value: f.Module},
-		{Name: xml.Name{Local: "effectName"}, Value: f.Name},
-		{Name: xml.Name{Local: "effectState"}, Value: strconv.Itoa(f.State)},
-		{Name: xml.Name{Local: "effectCode"}, Value: strconv.FormatUint(uint64(f.Code), 10)},
-		{Name: xml.Name{Local: "params_0"}, Value: f.P[0]},
-		{Name: xml.Name{Local: "x"}, Value: strconv.Itoa(f.X)},
-		{Name: xml.Name{Local: "y"}, Value: strconv.Itoa(f.Y)},
-	}
-	for i := 1; i < 15; i++ {
-		start.Attr = append(start.Attr, xml.Attr{
-			Name: xml.Name{Local: "params_" + strconv.Itoa(i)}, Value: f.P[i],
-		})
-	}
-	return e.EncodeElement(struct{}{}, start)
 }
 
 // UnmarshalXML reads all attributes; unknown params_N land in P[i].
@@ -160,42 +131,6 @@ type Preset struct {
 	Effects  []Effect `xml:"-"`
 	EXP      *EXP     `xml:"ppEXP1"`
 	Ctrl     *Ctrl    `xml:"ppCtrl"`
-}
-
-// MarshalXML keeps the original child order: Effects, ppEXP1, ppCtrl.
-func (p Preset) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	start.Name = xml.Name{Local: "presets"}
-	start.Attr = []xml.Attr{
-		{Name: xml.Name{Local: "ppBank"}, Value: strconv.Itoa(p.Bank)},
-		{Name: xml.Name{Local: "ppName"}, Value: p.Name},
-		{Name: xml.Name{Local: "ppVolume"}, Value: strconv.Itoa(p.Volume)},
-		{Name: xml.Name{Local: "ppID"}, Value: strconv.Itoa(p.ID)},
-		{Name: xml.Name{Local: "ppBPM"}, Value: strconv.Itoa(p.BPM)},
-		{Name: xml.Name{Local: "ppIRNum"}, Value: p.IRNum},
-		{Name: xml.Name{Local: "ppType"}, Value: strconv.Itoa(p.Type)},
-		{Name: xml.Name{Local: "ppAuthor"}, Value: p.Author},
-		{Name: xml.Name{Local: "ppNotes"}, Value: p.Notes},
-		{Name: xml.Name{Local: "ppTypeName"}, Value: p.TypeName},
-	}
-	if err := e.EncodeToken(start); err != nil {
-		return err
-	}
-	for _, f := range p.Effects {
-		if err := e.Encode(f); err != nil {
-			return err
-		}
-	}
-	if p.EXP != nil {
-		if err := e.Encode(*p.EXP); err != nil {
-			return err
-		}
-	}
-	if p.Ctrl != nil {
-		if err := e.Encode(*p.Ctrl); err != nil {
-			return err
-		}
-	}
-	return e.EncodeToken(start.End())
 }
 
 // UnmarshalXML preserves Effect child order while parsing.
@@ -268,19 +203,6 @@ type EXPChild struct {
 	Max   int    `xml:"expMax,attr"`
 }
 
-func (c EXPChild) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
-	name := "ppEXP1_" + strconv.Itoa(c.Slot)
-	type attrs struct {
-		MId   string `xml:"expMId,attr"`
-		Code  uint64 `xml:"expCode,attr"`
-		Index int    `xml:"expIndex,attr"`
-		Min   int    `xml:"expMin,attr"`
-		Max   int    `xml:"expMax,attr"`
-	}
-	return e.EncodeElement(attrs{c.MId, c.Code, c.Index, c.Min, c.Max},
-		xml.StartElement{Name: xml.Name{Local: name}})
-}
-
 type EXP struct {
 	XMLName   xml.Name   `xml:"ppEXP1"`
 	Target    int        `xml:"expTarget,attr"`
@@ -288,26 +210,6 @@ type EXP struct {
 	VolumeMin int        `xml:"expVolumeMin,attr"`
 	VolumeMax int        `xml:"expVolumeMax,attr"`
 	Kids      []EXPChild `xml:"-"`
-}
-
-// MarshalXML emits ppEXP1 with its numbered ppEXP1_N children.
-func (x EXP) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	start.Name = xml.Name{Local: "ppEXP1"}
-	start.Attr = []xml.Attr{
-		{Name: xml.Name{Local: "expTarget"}, Value: strconv.Itoa(x.Target)},
-		{Name: xml.Name{Local: "expVolume"}, Value: strconv.Itoa(x.Volume)},
-		{Name: xml.Name{Local: "expVolumeMin"}, Value: strconv.Itoa(x.VolumeMin)},
-		{Name: xml.Name{Local: "expVolumeMax"}, Value: strconv.Itoa(x.VolumeMax)},
-	}
-	if err := e.EncodeToken(start); err != nil {
-		return err
-	}
-	for _, k := range x.Kids {
-		if err := e.Encode(k); err != nil {
-			return err
-		}
-	}
-	return e.EncodeToken(start.End())
 }
 
 // UnmarshalXML captures attributes and the ppEXP1_N children.
@@ -365,20 +267,6 @@ type Ctrl struct {
 	C23     int      `xml:"c23,attr"`
 }
 
-// MarshalXML emits the <ppIRInfo> wrapper with numbered child elements.
-func (s IRInfoSet) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	start.Name = xml.Name{Local: "ppIRInfo"}
-	if err := e.EncodeToken(start); err != nil {
-		return err
-	}
-	for _, ir := range s.IRs {
-		if err := e.Encode(ir); err != nil {
-			return err
-		}
-	}
-	return e.EncodeToken(start.End())
-}
-
 // Load parses a .prst bundle XML file.
 func Load(path string) (*Bundle, error) {
 	data, err := os.ReadFile(path)
@@ -392,22 +280,183 @@ func Load(path string) (*Bundle, error) {
 	return &b, nil
 }
 
-// Save writes the bundle as XML (UTF-8 header, LF newlines).
+// Save writes the bundle in the device-compatible serialization: CRLF line
+// endings, self-closing empty elements, attributes greedily wrapped at 93
+// columns (the factory exporter's maximum observed line length is 94).
+//
+// The Matribox desktop app crashes on equivalent-but-different XML — observed
+// with `<Effect ...></Effect>` pairs and LF endings (2026-09-12) — so this
+// writer mirrors the factory exporter's byte style instead of canonical XML.
+// The format's interleaved attribute order (params_0, x, y, params_1, ...)
+// strongly suggests a hand-rolled parser; do not replace this with
+// encoding/xml marshaling.
 func (b *Bundle) Save(path string) error {
-	out, err := xml.MarshalIndent(b, "", "  ")
-	if err != nil {
-		return err
+	w := &bundleWriter{}
+	w.raw("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n\r\n<Matribox>\r\n")
+
+	w.elem("  ", "preset_info", []kv{
+		{"software", b.Info.Software},
+		{"firmware", b.Info.Firmware},
+		{"product", b.Info.Product},
+		{"count", strconv.Itoa(b.Info.Count)},
+		{"platform", b.Info.Platform},
+		{"time", b.Info.Time},
+	}, true)
+
+	w.open("  ", "ppIRInfo")
+	w.endTag()
+	for _, ir := range b.IRInfo.IRs {
+		w.elem("    ", "ppIRInfo"+strconv.Itoa(ir.Slot), []kv{
+			{"ppIRNum", ir.IRNum},
+			{"ppIRName", ir.Name},
+			{"ppIRCRC", ir.CRC},
+		}, true)
 	}
-	f, err := os.Create(path)
-	if err != nil {
-		return err
+	w.close("  ", "ppIRInfo")
+
+	for i := range b.Presets {
+		p := &b.Presets[i]
+		w.open("  ", "presets")
+		w.wrapAttrs("presets", []kv{
+			{"ppBank", strconv.Itoa(p.Bank)},
+			{"ppName", p.Name},
+			{"ppVolume", strconv.Itoa(p.Volume)},
+			{"ppID", strconv.Itoa(p.ID)},
+			{"ppBPM", strconv.Itoa(p.BPM)},
+			{"ppIRNum", p.IRNum},
+			{"ppType", strconv.Itoa(p.Type)},
+			{"ppAuthor", p.Author},
+			{"ppNotes", p.Notes},
+			{"ppTypeName", p.TypeName},
+		})
+		w.endTag()
+		for _, f := range p.Effects {
+			attrs := []kv{
+				{"effectModuleName", f.Module},
+				{"effectName", f.Name},
+				{"effectState", strconv.Itoa(f.State)},
+				{"effectCode", strconv.FormatUint(uint64(f.Code), 10)},
+				{"params_0", f.P[0]},
+				{"x", strconv.Itoa(f.X)},
+				{"y", strconv.Itoa(f.Y)},
+			}
+			for n := 1; n < 15; n++ {
+				attrs = append(attrs, kv{"params_" + strconv.Itoa(n), f.P[n]})
+			}
+			w.elem("    ", "Effect", attrs, true)
+		}
+		if p.Ctrl != nil {
+			w.elem("    ", "ppCtrl", []kv{
+				{"c11", strconv.Itoa(p.Ctrl.C11)},
+				{"c12", strconv.Itoa(p.Ctrl.C12)},
+				{"c13", strconv.Itoa(p.Ctrl.C13)},
+				{"c21", strconv.Itoa(p.Ctrl.C21)},
+				{"c22", strconv.Itoa(p.Ctrl.C22)},
+				{"c23", strconv.Itoa(p.Ctrl.C23)},
+			}, true)
+		}
+		if p.EXP != nil {
+			if len(p.EXP.Kids) == 0 {
+				w.elem("    ", "ppEXP1", []kv{
+					{"expTarget", strconv.Itoa(p.EXP.Target)},
+					{"expVolume", strconv.Itoa(p.EXP.Volume)},
+					{"expVolumeMin", strconv.Itoa(p.EXP.VolumeMin)},
+					{"expVolumeMax", strconv.Itoa(p.EXP.VolumeMax)},
+				}, true)
+			} else {
+				w.open("    ", "ppEXP1")
+				w.wrapAttrs("ppEXP1", []kv{
+					{"expTarget", strconv.Itoa(p.EXP.Target)},
+					{"expVolume", strconv.Itoa(p.EXP.Volume)},
+					{"expVolumeMin", strconv.Itoa(p.EXP.VolumeMin)},
+					{"expVolumeMax", strconv.Itoa(p.EXP.VolumeMax)},
+				})
+				w.endTag()
+				for _, k := range p.EXP.Kids {
+					w.elem("      ", "ppEXP1_"+strconv.Itoa(k.Slot), []kv{
+						{"expMId", k.MId},
+						{"expCode", strconv.FormatUint(k.Code, 10)},
+						{"expIndex", strconv.Itoa(k.Index)},
+						{"expMin", strconv.Itoa(k.Min)},
+						{"expMax", strconv.Itoa(k.Max)},
+					}, true)
+				}
+				w.close("    ", "ppEXP1")
+			}
+		}
+		w.close("  ", "presets")
 	}
-	defer f.Close()
-	if _, err := f.WriteString(xml.Header); err != nil {
-		return err
+	w.raw("</Matribox>\r\n")
+
+	return os.WriteFile(path, []byte(w.buf.String()), 0o644)
+}
+
+type kv struct{ k, v string }
+
+const maxCols = 93 // factory exporter never exceeds 94 columns
+
+// bundleWriter assembles factory-style XML: element attributes sit on as few
+// physical lines as possible without exceeding maxCols, continuation lines
+// aligned one space past the tag name.
+type bundleWriter struct {
+	buf strings.Builder
+	// cur tracks the current line length and the wrap column of the element
+	// being written.
+	cur  int
+	wrap int
+}
+
+func (w *bundleWriter) raw(s string) {
+	w.buf.WriteString(s)
+	if i := strings.LastIndexByte(s, '\n'); i >= 0 {
+		w.cur = len(s) - i - 1
+	} else {
+		w.cur += len(s)
 	}
-	_, err = f.Write(out)
-	return err
+}
+
+func (w *bundleWriter) nl() { w.raw("\r\n") }
+
+// open writes an element's start; follow with wrapAttrs and endTag.
+func (w *bundleWriter) open(indent, name string) {
+	w.raw(indent + "<" + name)
+	w.wrap = w.cur + 1
+}
+
+func (w *bundleWriter) endTag() { w.raw(">" + "\r\n") }
+
+func (w *bundleWriter) close(indent, name string) {
+	w.raw(indent + "</" + name + ">\r\n")
+}
+
+// wrapAttrs appends attributes to the element opened by open, wrapping at
+// maxCols with continuation lines aligned to the element's wrap column.
+func (w *bundleWriter) wrapAttrs(_ string, attrs []kv) {
+	for _, a := range attrs {
+		text := " " + a.k + "=\"" + escapeAttr(a.v) + "\""
+		if w.cur+len(text) > maxCols {
+			w.nl()
+			w.raw(strings.Repeat(" ", w.wrap))
+		}
+		w.raw(text)
+	}
+}
+
+// elem writes a complete element, self-closing or not.
+func (w *bundleWriter) elem(indent, name string, attrs []kv, selfClose bool) {
+	w.open(indent, name)
+	w.wrapAttrs(name, attrs)
+	if selfClose {
+		w.raw("/>")
+	} else {
+		w.raw(">")
+	}
+	w.nl()
+}
+
+func escapeAttr(s string) string {
+	r := strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;", `"`, "&quot;")
+	return r.Replace(s)
 }
 
 // FindIR validates a ppIRNum against the bundle's user IR table.
