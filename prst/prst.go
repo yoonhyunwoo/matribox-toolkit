@@ -303,16 +303,21 @@ func (b *Bundle) Save(path string) error {
 		{"time", b.Info.Time},
 	}, true)
 
-	w.open("  ", "ppIRInfo")
-	w.endTag()
-	for _, ir := range b.IRInfo.IRs {
-		w.elem("    ", "ppIRInfo"+strconv.Itoa(ir.Slot), []kv{
-			{"ppIRNum", ir.IRNum},
-			{"ppIRName", ir.Name},
-			{"ppIRCRC", ir.CRC},
-		}, true)
+	// Single-preset patch files (count=1) carry no ppIRInfo section — the
+	// desktop app rejects patch files that include one ("wrong patch file").
+	// Full-bundle re-saves keep it.
+	if len(b.IRInfo.IRs) > 0 {
+		w.open("  ", "ppIRInfo")
+		w.endTag()
+		for _, ir := range b.IRInfo.IRs {
+			w.elem("    ", "ppIRInfo"+strconv.Itoa(ir.Slot), []kv{
+				{"ppIRNum", ir.IRNum},
+				{"ppIRName", ir.Name},
+				{"ppIRCRC", ir.CRC},
+			}, true)
+		}
+		w.close("  ", "ppIRInfo")
 	}
-	w.close("  ", "ppIRInfo")
 
 	for i := range b.Presets {
 		p := &b.Presets[i]
