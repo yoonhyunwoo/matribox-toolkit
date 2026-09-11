@@ -55,14 +55,23 @@ func main() {
 		"NR":  findBlock("NR", "Gate 2"),
 		"RVB": findBlock("RVB", "Spring"),
 	}
+	var cabCode uint32
 	for i := range creeper.Effects {
 		e := &creeper.Effects[i]
 		if blk, ok := on[e.Module]; ok {
 			*e = blk
+			if e.Module == "CAB" {
+				cabCode = e.Code
+			}
 		} else {
 			e.State = 0
 		}
 	}
+	// The desktop exporter resolves ppIRNum to the factory IR index of the
+	// active CAB model (its low byte): it wrote 40 = 0x28 = "Sol 4x12" when
+	// re-exporting a preset whose bundle value was 0. Mirror that here, or
+	// the patch loads with the wrong cabinet IR.
+	creeper.IRNum = fmt.Sprint(cabCode & 0xFF)
 	b.Presets = []prst.Preset{*creeper} // patch files are single-preset only
 	b.IRInfo.IRs = nil                  // ... and carry no ppIRInfo section
 	b.Info.Count = 1
