@@ -1,9 +1,10 @@
 // Command songtone builds song-specific guitar tones as single-preset
 // Matribox patch files (the only patch format the desktop app accepts).
 //
-//	-song creep-chunk  Radiohead "Creep" pre-chorus rhythm crunch
-//	-song creep-clean  Radiohead "Creep" verse clean
-//	-song idly-chunk   My Chemical Romance "I Don't Love You" rhythm crunch
+//	-song creep-chunk   Radiohead "Creep" pre-chorus rhythm crunch
+//	-song creep-clean   Radiohead "Creep" verse clean
+//	-song idly-chunk    My Chemical Romance "I Don't Love You" rhythm crunch
+//	-song suspect-lead  한로로 "용의자" lead
 //
 // Every effect block is spliced from a factory preset that already uses the
 // same effectCode, so all params are factory-attested values.
@@ -69,17 +70,42 @@ var tones = map[string]toneSpec{
 			"RVB": "Room",        // light room; the track is fairly dry
 		},
 	},
+	// 한로로 "용의자" — community tone recipes: RAT-style fuzz/distortion,
+	// an TS808-family boost on top, delay+reverb mixed low. Lead goes
+	// through a Vox-style clean platform (the RAT supplies all the gain).
+	"suspect-lead": {
+		name: "Suspect Lead", file: "suspect-lead.prst", bpm: 107,
+		blocks: map[string]string{
+			"FX1": "Boost",      // TS808-family boost for lead cut
+			"FX2": "Dark Mouse", // RAT-style distortion/fuzz
+			"AMP": "Voks 30N",   // Vox AC30-normal clean platform
+			"NR":  "Gate 2",     // fuzz hiss control between phrases
+			"CAB": "Jazz 2x12",  // attested pairing with Voks 30N ("Hang Over")
+			"DLY": "Pure",       // plain delay, mix kept low
+			"RVB": "Hall",       // light hall
+		},
+	},
+}
+
+func chainSlot(module string) int {
+	order := []string{"FX1", "FX2", "AMP", "NR", "CAB", "EQ", "MOD", "DLY", "RVB"}
+	for i, m := range order {
+		if m == module {
+			return i
+		}
+	}
+	return 0
 }
 
 func main() {
 	in := flag.String("in", "prsts.prst", "factory bundle")
 	out := flag.String("out", "", "output patch file (default: per-song name)")
-	song := flag.String("song", "creep-chunk", "tone to build: creep-chunk|creep-clean|idly-chunk")
+	song := flag.String("song", "creep-chunk", "tone to build: creep-chunk|creep-clean|idly-chunk|suspect-lead")
 	flag.Parse()
 
 	spec, ok := tones[*song]
 	if !ok {
-		die("unknown song %q (creep-chunk|creep-clean|idly-chunk)", *song)
+		die("unknown song %q (creep-chunk|creep-clean|idly-chunk|suspect-lead)", *song)
 	}
 	b, err := prst.Load(*in)
 	if err != nil {
@@ -127,6 +153,7 @@ func main() {
 		} else {
 			e.State = 0
 		}
+		e.X = chainSlot(e.Module) // factory blocks carry their source preset's slot
 	}
 	// The desktop exporter resolves ppIRNum to the factory IR index of the
 	// active CAB model (its low byte): it wrote 40 = 0x28 = "Sol 4x12" when
