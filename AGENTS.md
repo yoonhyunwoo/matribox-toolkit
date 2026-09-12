@@ -66,6 +66,9 @@ not committed here. If it is absent, generate a fixture via the tests
 | `prst/prst_test.go` | Parse, round-trip, clone, name-padding tests |
 | `prst/fuzz_test.go` | `FuzzLoad`, `FuzzRoundTrip` harnesses |
 | `cmd/qme50ir/main.go` | CLI: `list`, `gen`, `preset` subcommands |
+| `cmd/songtone/main.go` | Song-tone patch builder; the `tones` registry maps researched songs to factory effect blocks |
+| `docs/SONG-TONE-GUIDE.md` | How-to for agents: research a song, add a tone, generate and verify a patch file |
+| `docs/prst-format-research.md` | Reverse-engineered `.prst` format analysis |
 | `README.md` | Human-facing overview (Korean) |
 
 ## API contracts
