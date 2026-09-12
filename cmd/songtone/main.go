@@ -86,6 +86,19 @@ var tones = map[string]toneSpec{
 			"RVB": "Plate",     // a touch of plate (attested ON in "60's OD")
 		},
 	},
+	// Green Day "American Idiot" — Les Paul Junior (P90) straight into a
+	// Dookie-modded Marshall Plexi 1959SLP -> Marshall 4x12 (G12T-75). All
+	// the gain comes from the amp; no drive pedals. Blocks spliced from the
+	// factory preset "PlexiRhythm", which pairs exactly this set.
+	"am-idiot": {
+		name: "Am Idiot", file: "am-idiot.prst", bpm: 186, genre: "Rock",
+		blocks: map[string]string{
+			"AMP": "Brit 50JP",   // Marshall JMP/Plexi-style head
+			"CAB": "Brit75 4x12", // G12T-75-loaded Marshall 4x12
+			"EQ":  "Guitar EQ",   // keeps the mid-forward Plexi shape
+			"RVB": "Spring",      // mild spring, the record is mostly dry
+		},
+	},
 	// 한로로 "용의자" — community tone recipes: RAT-style fuzz/distortion,
 	// an TS808-family boost on top, delay+reverb mixed low. Lead goes
 	// through a Vox-style clean platform (the RAT supplies all the gain).
@@ -117,7 +130,7 @@ func main() {
 	in := flag.String("in", "prsts.prst", "factory bundle")
 	out := flag.String("out", "", "output patch file (default: per-song name)")
 	song := flag.String("song", "creep-chunk",
-		"tone to build: creep-chunk|creep-clean|idly-chunk|suspect-lead|beatles-clean")
+		"tone to build: creep-chunk|creep-clean|idly-chunk|suspect-lead|beatles-clean|am-idiot")
 	flag.Parse()
 
 	spec, ok := tones[*song]
