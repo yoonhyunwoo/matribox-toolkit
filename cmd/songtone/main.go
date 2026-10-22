@@ -114,6 +114,23 @@ var tones = map[string]toneSpec{
 			"RVB": "Hall",       // light hall
 		},
 	},
+	// My Bloody Valentine "When You Sleep" — Jazzmaster (glide tremolo) ->
+	// ProCo Turbo RAT / Guv'nor fuzz -> Marshall JCM800 & Vox AC30 ->
+	// Yamaha SPX90 / Alesis Midiverb II reverse/mod reverb wash.
+	// MOD Vibrato emulates the glide pitch drift for non-tremolo guitars;
+	// Guitar EQ sculpts the mid-frequency presence per Boss GE-7 usage.
+	"mbv-when-you-sleep": {
+		name: "MBV Sleep", file: "mbv-when-you-sleep.prst", bpm: 126, genre: "Indie",
+		blocks: map[string]string{
+			"FX2": "Dark Mouse",  // ProCo RAT / Turbo RAT fuzz-distortion
+			"AMP": "Brit 800",    // Marshall JCM800 head
+			"NR":  "Gate 2",      // high-gain fuzz hiss control
+			"CAB": "Brit75 4x12", // Marshall 4x12 with G12T-75s
+			"EQ":  "Guitar EQ",   // Boss GE-7 midrange sculpting
+			"MOD": "Vibrato",     // pitch drift emulating glide guitar arm flutter
+			"RVB": "Mod RVB",     // modulated reverb wash (SPX90/Midiverb II bloom)
+		},
+	},
 }
 
 func chainSlot(module string) int {
@@ -130,7 +147,7 @@ func main() {
 	in := flag.String("in", "prsts.prst", "factory bundle")
 	out := flag.String("out", "", "output patch file (default: per-song name)")
 	song := flag.String("song", "creep-chunk",
-		"tone to build: creep-chunk|creep-clean|idly-chunk|suspect-lead|beatles-clean|am-idiot")
+		"tone to build: creep-chunk|creep-clean|idly-chunk|suspect-lead|beatles-clean|am-idiot|mbv-when-you-sleep")
 	flag.Parse()
 
 	spec, ok := tones[*song]

@@ -158,3 +158,4 @@ commit if it lives in this repository.
 | `suspect-lead` | 한로로 — 용의자 | lead | Boost → Dark Mouse → Voks 30N → Gate 2 → Jazz 2x12 → Pure → Hall |
 | `beatles-clean` | The Beatles | rhythm clean | COMP → Voks 30N → Jazz 2x12 → Plate |
 | `am-idiot` | Green Day — American Idiot | rhythm | Brit 50JP → Guitar EQ → Brit75 4x12 → Spring |
+| `mbv-when-you-sleep` | My Bloody Valentine — When You Sleep | rhythm / glide wall | Dark Mouse → Brit 800 → Gate 2 → Brit75 4x12 → Guitar EQ → Vibrato → Mod RVB |
