@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Matribox>
+  <preset_info software="1.0.3" firmware="1.1" product="Matribox" count="1" platform="MAC"
+                time="1792672961154"/>
+  <presets ppBank="0" ppName="MBV Sleep   " ppVolume="65" ppID="0" ppBPM="126" ppIRNum="48"
+            ppType="2" ppAuthor="yoonhyunwoo" ppNotes="MBV When You Sleep rhythm glide tone"
+            ppTypeName="Indie">
+    <Effect effectModuleName="FX1" effectName="COMP" effectState="0" effectCode="0"
+             params_0="50" x="0" y="0" params_1="50" params_2="50" params_3="0" params_4="0"
+             params_5="0" params_6="0" params_7="0" params_8="0" params_9="0" params_10="0"
+             params_11="0" params_12="0" params_13="0" params_14="0"/>
+    <Effect effectModuleName="FX2" effectName="Dark Mouse" effectState="1"
+             effectCode="50331691" params_0="65" x="1" y="0" params_1="45" params_2="60"
+             params_3="0" params_4="0" params_5="0" params_6="0" params_7="0" params_8="0"
+             params_9="0" params_10="0" params_11="0" params_12="0" params_13="0"
+             params_14="0"/>
+    <Effect effectModuleName="AMP" effectName="Brit 800" effectState="1"
+             effectCode="117440565" params_0="60" x="2" y="0" params_1="55" params_2="50"
+             params_3="48" params_4="60" params_5="55" params_6="50" params_7="12800"
+             params_8="65280" params_9="10495" params_10="20736" params_11="12800"
+             params_12="0" params_13="0" params_14="0"/>
+    <Effect effectModuleName="NR" effectName="Gate 2" effectState="1" effectCode="29"
+             params_0="25" x="3" y="0" params_1="20" params_2="60" params_3="0" params_4="0"
+             params_5="0" params_6="0" params_7="0" params_8="0" params_9="0" params_10="0"
+             params_11="0" params_12="0" params_13="0" params_14="0"/>
+    <Effect effectModuleName="CAB" effectName="Brit75 4x12" effectState="1"
+             effectCode="167772208" params_0="0" x="4" y="0" params_1="50" params_2="0"
+             params_3="0" params_4="0" params_5="80" params_6="7500" params_7="0"
+             params_8="0" params_9="0" params_10="0" params_11="0" params_12="0"
+             params_13="0" params_14="0"/>
+    <Effect effectModuleName="EQ" effectName="Guitar EQ" effectState="1"
+             effectCode="16777269" params_0="0" x="5" y="0" params_1="2" params_2="4"
+             params_3="5" params_4="2" params_5="50" params_6="0" params_7="0" params_8="0"
+             params_9="0" params_10="0" params_11="0" params_12="0" params_13="0"
+             params_14="0"/>
+    <Effect effectModuleName="MOD" effectName="Vibrato" effectState="1" effectCode="67108887"
+             params_0="35" x="6" y="0" params_1="1.8" params_2="50" params_3="0" params_4="0"
+             params_5="0" params_6="0" params_7="0" params_8="0" params_9="0" params_10="0"
+             params_11="0" params_12="0" params_13="0" params_14="0"/>
+    <Effect effectModuleName="DLY" effectName="Pure" effectState="0" effectCode="184549377"
+             params_0="30" x="7" y="0" params_1="25" params_2="300" params_3="0" params_4="0"
+             params_5="0" params_6="0" params_7="0" params_8="0" params_9="0" params_10="0"
+             params_11="0" params_12="0" params_13="0" params_14="0"/>
+    <Effect effectModuleName="RVB" effectName="Mod RVB" effectState="1"
+             effectCode="201326600" params_0="45" x="8" y="0" params_1="20" params_2="75"
+             params_3="0" params_4="5" params_5="1" params_6="0" params_7="0" params_8="0"
+             params_9="0" params_10="0" params_11="0" params_12="0" params_13="0"
+             params_14="0"/>
+    <ppCtrl c11="1" c12="65535" c13="65535" c21="7" c22="8" c23="65535"/>
+    <ppEXP1 expTarget="0" expVolume="0" expVolumeMin="0" expVolumeMax="99"/>
+  </presets>
+</Matribox>
